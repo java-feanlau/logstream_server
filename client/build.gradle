@@ -1,0 +1,84 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'jacoco'
+}
+
+ext.junitJupiterVersion  = '5.0.0'
+ext.junitPlatformVersion = '1.0.0'
+ext.log4jVersion         = '2.9.1'
+
+mainClassName = 'com.boyitech.logstream.client.ClientApp'
+description = "logstream_client"
+
+group = 'com.boyitech'
+version = '3.2.4-SNAPSHOT'
+
+jacoco {
+    toolVersion = "0.8.1"
+    reportsDir = file("$buildDir/jacocoReportDir")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination file("${buildDir}/jacocoReportDir/jacocoHtml")
+    }
+}
+
+dependencies {
+
+    compile project(':core')
+    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
+  //  testCompile group: 'junit', name: 'junit', version: '4.12 '
+}
+
+test {
+    useJUnitPlatform {
+
+    }
+}
+
+// do jacoco after test
+test.finalizedBy(jacocoTestReport)
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+distributions {
+	main {
+		contents {
+			into('config') {
+				from {'config'}
+			}
+			into('ssl') {
+				from {'ssl'}
+			}
+			into('bin') {
+				from {'bin/prunsrv32.exe'}
+			}
+			into('bin') {
+				from {'bin/prunsrv64.exe'}
+			}
+            into('log'){
+                from {'log'}
+            }
+            into('tmp'){
+                from {'tmp'}
+            }
+		}
+	}
+}
+
+tasks.startScripts {
+  doLast {
+    def unixScriptFile    = file getUnixScript()
+    unixScriptFile.text = unixScriptFile.text.replaceAll('APP_HOME=',  'export APP_HOME=')
+    def winScriptFile     = file getWindowsScript()
+    winScriptFile.text = winScriptFile.text.replaceFirst(/(set CLASSPATH=%APP_HOME%\\lib\\).*/, { "${it[1]}*" })
+  }
+}
